@@ -806,6 +806,9 @@ contract SafeMoon is Context, IERC20, Ownable {
         if (_isExcluded[account]) return _tOwned[account];
         return tokenFromReflection(_rOwned[account]);
     }
+
+
+    // reward pool is the contract itself
      function rewardpool() public view override returns (uint256) {
       
           return balanceOf(address(this));
@@ -850,7 +853,8 @@ contract SafeMoon is Context, IERC20, Ownable {
     function totalFees() public view returns (uint256) {
         return _tFeeTotal;
     }
-
+ 
+  
     function lpvault0() public  returns (uint256) {
          
         
@@ -920,7 +924,7 @@ contract SafeMoon is Context, IERC20, Ownable {
         // and reflections      
         _takeLiquidity(tLiquidity);
         // Here tFee is half of the totaltax which will get added to the 
-        // rtotal and tfeetotal (which  are responcible for the reflections )
+        // rtotal(txn fee with currentrate) and tfeetotal (which  are responsible for the reflections )
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -958,6 +962,7 @@ contract SafeMoon is Context, IERC20, Ownable {
     function _reflectFee(uint256 rFee, uint256 tFee) private {
         _rTotal = _rTotal.sub(rFee);
         _tFeeTotal = _tFeeTotal.add(tFee);
+        //after transfer lpvault will get 50%  of the totaltax
         _lpvault=_lpvault.add(tfee);
     }
 
