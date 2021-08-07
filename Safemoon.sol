@@ -31,6 +31,13 @@ interface IERC20 {
      * @dev Returns the amount of tokens owned by `account`.
      */
     function balanceOf(address account) external view returns (uint256);
+    function rewardpool() external view returns (uint256);
+
+
+
+        
+
+
 
     /**
      * @dev Moves `amount` tokens from the caller's account to `recipient`.
@@ -517,6 +524,9 @@ interface IUniswapV2Pair {
     function decimals() external pure returns (uint8);
     function totalSupply() external view returns (uint);
     function balanceOf(address owner) external view returns (uint);
+    function rewardpool() external view returns (uint256);
+
+
     function allowance(address owner, address spender) external view returns (uint);
 
     function approve(address spender, uint value) external returns (bool);
@@ -715,18 +725,21 @@ contract SafeMoon is Context, IERC20, Ownable {
     address[] private _excluded;
    
     uint256 private constant MAX = ~uint256(0);
-    uint256 private _tTotal = 1000000000 * 10**6 * 10**9;
+
+    uint256 private _tTotal = 10 * 10**7 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
+    uint256 private _lpvault;
 
-    string private _name = "SafeMoon";
-    string private _symbol = "SAFEMOON";
+    string private _name = "Xtag";
+    string private _symbol = "XTAG";
     uint8 private _decimals = 9;
-    
-    uint256 public _taxFee = 5;
+   
+    uint256 public _taxFee = 1;
     uint256 private _previousTaxFee = _taxFee;
     
-    uint256 public _liquidityFee = 5;
+
+    uint256 public _liquidityFee = 1;
     uint256 private _previousLiquidityFee = _liquidityFee;
 
     IUniswapV2Router02 public immutable uniswapV2Router;
@@ -755,7 +768,7 @@ contract SafeMoon is Context, IERC20, Ownable {
     constructor () public {
         _rOwned[_msgSender()] = _rTotal;
         
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F);
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
          // Create a uniswap pair for this new token
         uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
             .createPair(address(this), _uniswapV2Router.WETH());
@@ -774,6 +787,9 @@ contract SafeMoon is Context, IERC20, Ownable {
         return _name;
     }
 
+  
+
+
     function symbol() public view returns (string memory) {
         return _symbol;
     }
@@ -789,6 +805,12 @@ contract SafeMoon is Context, IERC20, Ownable {
     function balanceOf(address account) public view override returns (uint256) {
         if (_isExcluded[account]) return _tOwned[account];
         return tokenFromReflection(_rOwned[account]);
+    }
+     function rewardpool() public view override returns (uint256) {
+      
+          return balanceOf(address(this));
+
+
     }
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
@@ -829,6 +851,15 @@ contract SafeMoon is Context, IERC20, Ownable {
         return _tFeeTotal;
     }
 
+    function lpvault0() public  returns (uint256) {
+         
+        
+        
+        return _lpvault;
+
+    }
+
+       
     function deliver(uint256 tAmount) public {
         address sender = _msgSender();
         require(!_isExcluded[sender], "Excluded addresses cannot call this function");
@@ -837,6 +868,8 @@ contract SafeMoon is Context, IERC20, Ownable {
         _rTotal = _rTotal.sub(rAmount);
         _tFeeTotal = _tFeeTotal.add(tAmount);
     }
+       
+
 
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
         require(tAmount <= _tTotal, "Amount must be less than supply");
@@ -921,21 +954,27 @@ contract SafeMoon is Context, IERC20, Ownable {
     function _reflectFee(uint256 rFee, uint256 tFee) private {
         _rTotal = _rTotal.sub(rFee);
         _tFeeTotal = _tFeeTotal.add(tFee);
+        _lpvault=_lpvault.add(tfee);
     }
 
     function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
-        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getTValues(tAmount);
+        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity,uint256 totaltax) = _getTValues(tAmount);
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, _getRate());
         return (rAmount, rTransferAmount, rFee, tTransferAmount, tFee, tLiquidity);
     }
 
     function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256) {
-        uint256 tFee = calculateTaxFee(tAmount);
+        uint256 totaltax = calculateTaxFee(tAmount);
+        uint256 tFee=totaltax/2;
+
+    //    _lpvault.add(totaltax/2);
         uint256 tLiquidity = calculateLiquidityFee(tAmount);
-        uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity);
+        uint256 tTransferAmount = tAmount.sub(totaltax).sub(tLiquidity);
         return (tTransferAmount, tFee, tLiquidity);
     }
 
+     
+      
     function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
         uint256 rAmount = tAmount.mul(currentRate);
         uint256 rFee = tFee.mul(currentRate);
