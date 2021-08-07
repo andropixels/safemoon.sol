@@ -915,8 +915,12 @@ contract SafeMoon is Context, IERC20, Ownable {
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);        
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);   
+        //two main functions whiich are responcible for the liquidityfee 
+        // and reflections      
         _takeLiquidity(tLiquidity);
+        // Here tFee is half of the totaltax which will get added to the 
+        // rtotal and tfeetotal (which  are responcible for the reflections )
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
@@ -965,9 +969,10 @@ contract SafeMoon is Context, IERC20, Ownable {
 
     function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256) {
         uint256 totaltax = calculateTaxFee(tAmount);
+        //spliting the fee in two equal halfs
         uint256 tFee=totaltax/2;
 
-    //    _lpvault.add(totaltax/2);
+    
         uint256 tLiquidity = calculateLiquidityFee(tAmount);
         uint256 tTransferAmount = tAmount.sub(totaltax).sub(tLiquidity);
         return (tTransferAmount, tFee, tLiquidity);
