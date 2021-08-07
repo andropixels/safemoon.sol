@@ -855,7 +855,7 @@ contract SafeMoon is Context, IERC20, Ownable {
     }
  
   
-    function lpvault0() public  returns (uint256) {
+    function lpvault0() public view  returns (uint256) {
          
         
         
@@ -963,7 +963,7 @@ contract SafeMoon is Context, IERC20, Ownable {
         _rTotal = _rTotal.sub(rFee);
         _tFeeTotal = _tFeeTotal.add(tFee);
         //after transfer lpvault will get 50%  of the totaltax
-        _lpvault=_lpvault.add(tfee);
+        _lpvault=_lpvault.add(tFee);
     }
 
     function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
